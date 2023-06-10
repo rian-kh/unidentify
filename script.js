@@ -6,31 +6,42 @@ const params = new URLSearchParams(window.location.search);
 
 // Checks if code was found in callback
 const code = params.get("code");
-let authorized = false;
-var div = document.getElementById('songs');
+const songDiv = document.getElementById('songs');
+const searchDiv = document.getElementById('search');
 
 document.getElementById("apiButton").onclick = callAPI;
 
-// Check if the access code was found on site load
+// Code to run after authorization (Artist finding, etc)
 if (code) {
     const accessToken = await getAccessToken(clientId, code);
     const profile = await fetchProfile(accessToken);
-    const topInfo = await fetchTop(accessToken);
-
+    
+    
 
 
     
-
+    // Write out top artist w/ genre
+    const topInfo = await fetchTop(accessToken);
     for (let i = 0; i < topInfo.items.length; i++){
-        console.log(i);
-        console.log(topInfo.items[i].name);
-        console.log(topInfo.items[i].genres);
-
         let string = `<p>${i+1}. ${topInfo.items[i].name}, Genres: ${topInfo.items[i].genres}</p>`
-        div.innerHTML += string
-        div.innerHTML += "</p><p>&nbsp;</p>";
+        songDiv.innerHTML += string
+        songDiv.innerHTML += "</p><p>&nbsp;</p>";
         
     }
+
+    // Write out a song matching the genre: shoegaze
+    const songInfo = await fetchSong(accessToken);
+    console.log(songInfo)
+
+    for (let i = 0; i < songInfo.tracks.items.length; i++){
+
+        let trackid = songInfo.tracks.items[i].id
+        let string = `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${trackid}?utm_source=generator" width="30%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>                <p>&nbsp;</p>`
+        
+        searchDiv.innerHTML += string
+        searchDiv.innerHTML += "</p><p>&nbsp;</p>";
+    }
+
 
     populateUI(profile);
 }
@@ -126,6 +137,19 @@ async function fetchTop(token) {
 
     return await result.json();
 }
+
+// Searches for a song given the genre
+async function fetchSong(token) {
+    const result = await fetch("https://api.spotify.com/v1/search?q=tag%3Ahipster+genre%3Aindie+pop&type=track&market=US&limit=10", {
+        method: "GET", headers: { Authorization: `Bearer ${token}` }
+    });
+
+    return await result.json();
+}
+
+
+
+
 
 // Updates UI with profile data
 function populateUI(profile) {
