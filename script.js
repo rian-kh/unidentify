@@ -7,6 +7,7 @@ const params = new URLSearchParams(window.location.search);
 // Checks if code was found in callback
 const code = params.get("code");
 let authorized = false;
+var div = document.getElementById('songs');
 
 document.getElementById("apiButton").onclick = callAPI;
 
@@ -14,6 +15,23 @@ document.getElementById("apiButton").onclick = callAPI;
 if (code) {
     const accessToken = await getAccessToken(clientId, code);
     const profile = await fetchProfile(accessToken);
+    const topInfo = await fetchTop(accessToken);
+
+
+
+    
+
+    for (let i = 0; i < topInfo.items.length; i++){
+        console.log(i);
+        console.log(topInfo.items[i].name);
+        console.log(topInfo.items[i].genres);
+
+        let string = `<p>${i+1}. ${topInfo.items[i].name}, Genres: ${topInfo.items[i].genres}</p>`
+        div.innerHTML += string
+        div.innerHTML += "</p><p>&nbsp;</p>";
+        
+    }
+
     populateUI(profile);
 }
 
@@ -41,7 +59,7 @@ export async function redirectToAuthCodeFlow(clientId) {
     params.append("redirect_uri", "http://localhost:5173/callback");
     
     // Parameters of permissions we want from the user
-    params.append("scope", "user-read-private user-read-email");
+    params.append("scope", "user-top-read user-read-recently-played");
 
     params.append("code_challenge_method", "S256");
     params.append("code_challenge", challenge);
@@ -91,9 +109,18 @@ export async function getAccessToken(clientId, code) {
     return access_token;
 }
 
-// 
+// Gets profile information
 async function fetchProfile(token) {
     const result = await fetch("https://api.spotify.com/v1/me", {
+        method: "GET", headers: { Authorization: `Bearer ${token}` }
+    });
+
+    return await result.json();
+}
+
+// Gets top song information
+async function fetchTop(token) {
+    const result = await fetch("https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=50", {
         method: "GET", headers: { Authorization: `Bearer ${token}` }
     });
 
