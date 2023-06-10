@@ -1,11 +1,26 @@
+<!-- Some code adapted from https://developer.spotify.com/documentation/web-api/howtos/web-app-profile -->
+
 <html>
     <head>
         <title>Unidentify</title>
-        <script src="script.js"></script>
+        <script src="script.js" type="module"></script>
     </head>
 
     <body>
-        <h1>Unidentify</h1>
-        <button onclick="printText()">Button</button>
+
+        <button id="apiButton">Get Spotify data</button>
+
+
+        <section id="profile">
+            <h2>Logged in as <span id="displayName"></span></h2>
+            <span id="avatar"></span>
+            <ul>
+                <li>User ID: <span id="id"></span></li>
+                <li>Email: <span id="email"></span></li>
+                <li>Spotify URI: <a id="uri" href="#"></a></li>
+                <li>Link: <a id="url" href="#"></a></li>
+                <li>Profile Image: <span id="imgUrl"></span></li>
+            </ul>
+            </section>
     </body>
 </html>
