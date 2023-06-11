@@ -8,28 +8,36 @@
 
     <body>
 
+        <h1>Unidentify</h1>
         <button id="apiButton">Get Spotify data</button>
 
 
-        <section id="profile">
+        <section id="profile" style="display: none;">
             <h2>Logged in as <span id="displayName"></span></h2>
             <span id="avatar"></span>
             <ul>
                 <li>User ID: <span id="id"></span></li>
-                <li>Email: <span id="email"></span></li>
                 <li>Spotify URI: <a id="uri" href="#"></a></li>
                 <li>Link: <a id="url" href="#"></a></li>
                 <li>Profile Image: <span id="imgUrl"></span></li>
             </ul>
             </section>
+
         
-        <div id="search">
-                <h1>Searched songs:</h1>
-                <p>Genre: indie pop, lowest 10% popularity:</p>
+        <div id="searchBox" style="display: none;">
+            <p>Search songs by genre:</p>
+
+            <input type="text" id="input">
+            <button id="searchButton">Search</button>
+
+            <div id="search">
+            
+            </div>
+
         </div>
 
         <div id="songs">
-             <h1>Artists and Genres:</h1>
+             
         </div>
 
 
