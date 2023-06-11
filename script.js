@@ -59,7 +59,7 @@ async function outputSongs() {
     if(!code)
         return;
 
-    const songInfo = await fetchSong(accessToken, `https://api.spotify.com/v1/search?q=tag%3Ahipster+genre%3A${genreInput}&type=track&market=US&limit=5`);
+    const songInfo = await fetchSong(accessToken, `https://api.spotify.com/v1/search?q=tag%3Ahipster+genre%3A"${genreInput}"&type=track&market=US&limit=10`);
     console.log(songInfo)
 
 
@@ -69,7 +69,7 @@ async function outputSongs() {
 
         let trackid = songInfo.tracks.items[i].id
         let string = `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${trackid}?utm_source=generator" height="10%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>                <p>&nbsp;</p>`
-            
+
         searchDiv.innerHTML += string
         searchDiv.innerHTML += "</p><p>&nbsp;</p>";
     }
@@ -168,6 +168,7 @@ async function fetchSong(token, request) {
 
     return await result.json();
 }
+
 
 
 
