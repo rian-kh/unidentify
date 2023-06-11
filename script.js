@@ -6,9 +6,9 @@ const params = new URLSearchParams(window.location.search);
 // Checks if code was found in callback
 const code = params.get("code");
 const user = "user"; 
-const songDiv = document.getElementById('songs');
+const artistDiv = document.getElementById('artists');
+const artistGenreDiv = document.getElementById('artistsByGenre');
 const searchDiv = document.getElementById('search');
-const profileDiv = document.getElementById('profile');
 
 // Button function redirects
 document.getElementById("apiButton").onclick = callAPI;
@@ -16,6 +16,8 @@ document.getElementById("searchButton").onclick = outputSongs;
 
 const accessToken = await getAccessToken(user, code);
 const profile = await fetchProfile(accessToken);
+var genreDict = {};
+
 
 
 // Code to run after authorization (Artist finding, etc)
@@ -23,25 +25,69 @@ if (code) {
 
     // Write out top artist w/ genre
     const topInfo = await fetchTop(accessToken);
+    
+
+
 
     // Make profile/search visible
+    populateUI(profile);
     document.getElementById('profile').style.display = "inline";
     document.getElementById('searchBox').style.display = "inline";
-    songDiv.innerHTML = "<h1>Your Artists and Genres:</h1>"
+    document.getElementById('artists').style.display = "inline";
+    document.getElementById('artistsByGenre').style.display = "inline";
+    
+   
+
 
     // Show your top 50 artists with their genres
     for (let i = 0; i < topInfo.items.length; i++){
-        let string = `<p>${i+1}. ${topInfo.items[i].name}, Genres: ${topInfo.items[i].genres}</p>`
-        songDiv.innerHTML += string
-        songDiv.innerHTML += "</p><p>&nbsp;</p>";
+        let genres = topInfo.items[i].genres;
+        let artist = topInfo.items[i].name;
+
+        
+        // Adding genres/artists to genreDict
+        for (var j = 0; j < genres.length; j++) {
+
+            // Create new key for unique genres
+            if (!(genres[j] in genreDict))
+                genreDict[genres[j]] = [artist]
+
+            // Add to existing genre key if the artist is not found in it
+            // (Artists can have multiple genres? This might not be necessary)
+            else if (!(artist in genreDict[genres[j]]))
+                genreDict[genres[j]].push(artist)
+
+        }
+
+
+        let string = `<p>${i+1}. ${artist}, Genres: ${genres}</p>`
+
+        artistDiv.innerHTML += string
+        artistDiv.innerHTML += "<p>&nbsp;</p>";
         
     }
 
+    // Output artists by each genre
+
+    for (var key in genreDict) {
+        artistGenreDiv.innerHTML += `<p>${key}:<p>\n<ul>`
+
+        // Print list of artists for that genre
+        for (var i = 0; i < genreDict[key].length; i++) {
+            artistGenreDiv.innerHTML += `<li>${genreDict[key][i]}</li>`
+        }
+
+        artistGenreDiv.innerHTML += "</ul>\n<p>&nbsp;</p>";
+    }
+
+    
+
+
   
   
 
 
-    populateUI(profile);
+    
 }
 
 // For initial access token request
@@ -92,7 +138,7 @@ export async function redirectToAuthCodeFlow(user) {
     params.append("redirect_uri", "http://localhost:5173/callback");
     
     // Parameters of permissions we want from the user
-    params.append("scope", "user-top-read user-read-recently-played");
+    params.append("scope", "user-top-read user-read-recently-played user-read-private");
 
     params.append("code_challenge_method", "S256");
     params.append("code_challenge", challenge);
