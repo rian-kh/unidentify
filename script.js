@@ -99,7 +99,19 @@ function callAPI() {
 
 // Outputs 5 songs matching the genre specified
 async function outputSongs() {
-    var genreInput = document.getElementById("input").value;
+
+    // Random genre from dictionary, adapted from https://stackoverflow.com/questions/61042479/how-to-get-a-random-key-value-from-a-javascript-object
+    // Separating keys from genreInput is just for readability
+    let keys = Object.keys(genreDict);
+    let genreInput = keys[Math.floor(Math.random() * keys.length)]
+
+    let artistsOfGenre = genreDict[genreInput]
+    let matchingArtist = artistsOfGenre[Math.floor(Math.random() * artistsOfGenre.length)]
+
+
+    console.log(genreInput)
+    console.log(artistsOfGenre)
+    console.log(matchingArtist)
     genreInput = genreInput.replace(/\s/g, "+")
 
     if(!code)
@@ -109,7 +121,7 @@ async function outputSongs() {
     console.log(songInfo)
 
 
-    searchDiv.innerHTML = `<h1>Searched songs:</h1>\n<p>Genre: ${genreInput}, lowest 10% popularity:</p>`;
+    searchDiv.innerHTML = `<h1>Searched songs:</h1>\n<p>Genre: ${genreInput.replace(/\+/g, " ")}, matching artist: ${matchingArtist}, lowest 10% popularity:</p>`;
 
     for (let i = 0; i < songInfo.tracks.items.length; i++){
 
