@@ -67,8 +67,6 @@ if (code) {
     artistDiv.innerHTML += "<ol type=\"1\">\n" + listString + "</ol>\n"
     // Output artists by each genre
 
-    console.log(artistDiv.innerHTML)
-
     for (var key in genreDict) {
         artistGenreDiv.innerHTML += `<p>${key}:<p>\n<ul>`
 
@@ -121,31 +119,32 @@ async function outputSongs() {
     let artistsOfGenre = genreDict[genreInput]
     let matchingArtist = artistsOfGenre[Math.floor(Math.random() * artistsOfGenre.length)]
 
-
-    console.log(genreInput)
-    console.log(artistsOfGenre)
-    console.log(matchingArtist)
     genreInput = genreInput.replace(/\s/g, "+")
 
     if(!code)
         return;
 
-    const songInfo = await fetchSong(accessToken, `https://api.spotify.com/v1/search?q=tag%3Ahipster+genre%3A"${genreInput}"&type=track&market=US&limit=10&include_external=audio&market=${profile.country}`);
-    console.log(songInfo)
-
+    // Get 20 songs matching genre, and pick a random one to show
+    const songInfo = await fetchSong(accessToken, `https://api.spotify.com/v1/search?q=tag%3Ahipster+genre%3A"${genreInput}"&type=track&market=US&limit=20&include_external=audio&market=${profile.country}`);
+    let randomSong = songInfo.tracks.items[Math.floor(Math.random() * songInfo.tracks.items.length)]
 
     searchDiv.innerHTML = `<h1>Searched songs:</h1>\n<p>Genre: ${genreInput.replace(/\+/g, " ")}, matching artist: ${matchingArtist}, lowest 10% popularity:</p>`;
 
-    for (let i = 0; i < songInfo.tracks.items.length; i++){
+    let trackid = randomSong.id
+    let string = `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${trackid}?utm_source=generator" height="10%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>                <p>&nbsp;</p>`
 
-        let trackid = songInfo.tracks.items[i].id
-        let string = `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${trackid}?utm_source=generator" height="10%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>                <p>&nbsp;</p>`
-
-        searchDiv.innerHTML += string
-    }
+    searchDiv.innerHTML += string
+    
     
 }
 
+async function findGen(id) {
+    var result = await fetch(`https://api.spotify.com/v1/artists/${id}`, {
+        method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    return await result.json()
+}
 
 
 // Redirects to Spotify authorization 
