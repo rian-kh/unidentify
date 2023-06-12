@@ -7,44 +7,41 @@
     </head>
 
     <body>
+        <div style="float: left">
+            <h1>Unidentify</h1>
+            <p>Uses your Spotify data to <i>(try to)</i> find obscure songs matching the genres of your top artists.</p>
+            <button id="apiButton" style="display: inline;">Get Spotify data</button>
+            <p>&nbsp;</p>
+            <h3 id="profile" style="display: none;">Logged in as <span id="displayName"></span></h3>
+            <p>&nbsp;</p>
 
-        <h1>Unidentify</h1>
-        <button id="apiButton">Get Spotify data</button>
+            <div id="searchBox" style="display: none;">
+                <button id="searchButton">Recommend a song...</button>
+                <input type="button" value="Show top artists" id="hideButton"></input>
+                <div id="search">
+                
+                </div>
 
-
-        <section id="profile" style="display: none;">
-            <h2>Logged in as <span id="displayName"></span></h2>
-            <span id="avatar"></span>
-            <ul>
-                <li>User ID: <span id="id"></span></li>
-                <li>Spotify URI: <a id="uri" href="#"></a></li>
-                <li>Link: <a id="url" href="#"></a></li>
-                <li>Profile Image: <span id="imgUrl"></span></li>
-            </ul>
-            </section>
-
-        
-        <div id="searchBox" style="display: none;">
-            <button id="searchButton">Recommend a song...</button>
-
-            <div id="search">
-            
             </div>
 
         </div>
 
-        <div id="artists" style="display: none;">
-            <h1>Your Artists and Genres:</h1>
+        <div id="rightSide" style="display: none; float: right">
+            <h1>Top 50 Artists:</h1>
+            <div id="artists" style="display: none; overflow-y:auto; height:400px; width:400px;" >
+                
 
 
-        </div>
+            </div>
 
-        <div id="artistsByGenre" style="display: none;">
             <h1>Artists by Genre:</h1>
+            <div id="artistsByGenre" style="display: none; overflow-y:auto; height:400px; width:400px;">
+                
 
+
+            </div>
 
         </div>
-
 
     </body>
 </html>

@@ -3,7 +3,7 @@
 
 const params = new URLSearchParams(window.location.search);
 
-// Checks if code was found in callback
+// Div constants
 const code = params.get("code");
 const user = "user"; 
 const artistDiv = document.getElementById('artists');
@@ -13,6 +13,7 @@ const searchDiv = document.getElementById('search');
 // Button function redirects
 document.getElementById("apiButton").onclick = callAPI;
 document.getElementById("searchButton").onclick = outputSongs;
+document.getElementById("hideButton").onclick = hideRight;
 
 const accessToken = await getAccessToken(user, code);
 const profile = await fetchProfile(accessToken);
@@ -25,19 +26,17 @@ if (code) {
 
     // Write out top artist w/ genre
     const topInfo = await fetchTop(accessToken);
-    
-
 
 
     // Make profile/search visible
     populateUI(profile);
+    document.getElementById('apiButton').style.display = "none";
     document.getElementById('profile').style.display = "inline";
     document.getElementById('searchBox').style.display = "inline";
     document.getElementById('artists').style.display = "inline";
     document.getElementById('artistsByGenre').style.display = "inline";
-    
-   
 
+    let listString = "";
 
     // Show your top 50 artists with their genres
     for (let i = 0; i < topInfo.items.length; i++){
@@ -59,15 +58,16 @@ if (code) {
 
         }
 
+        if (genres.length == 0)
+            genres = "N/A"
 
-        let string = `<p>${i+1}. ${artist}, Genres: ${genres}</p>`
-
-        artistDiv.innerHTML += string
-        artistDiv.innerHTML += "<p>&nbsp;</p>";
-        
+        listString += `<li><b>${artist}</b>, Genres: ${genres}</li>\n`   
     }
 
+    artistDiv.innerHTML += "<ol type=\"1\">\n" + listString + "</ol>\n"
     // Output artists by each genre
+
+    console.log(artistDiv.innerHTML)
 
     for (var key in genreDict) {
         artistGenreDiv.innerHTML += `<p>${key}:<p>\n<ul>`
@@ -97,6 +97,19 @@ function callAPI() {
     } 
 }
 
+
+function hideRight() {
+
+    if (document.getElementById("hideButton").value == "Show top artists") {
+        document.getElementById("rightSide").style.display = "inline";
+        document.getElementById("hideButton").value = "Hide top artists";
+    } else {
+        document.getElementById("rightSide").style.display = "none";
+        document.getElementById("hideButton").value = "Show top artists";
+    }
+}
+
+
 // Outputs 5 songs matching the genre specified
 async function outputSongs() {
 
@@ -117,7 +130,7 @@ async function outputSongs() {
     if(!code)
         return;
 
-    const songInfo = await fetchSong(accessToken, `https://api.spotify.com/v1/search?q=tag%3Ahipster+genre%3A"${genreInput}"&type=track&market=US&limit=10`);
+    const songInfo = await fetchSong(accessToken, `https://api.spotify.com/v1/search?q=tag%3Ahipster+genre%3A"${genreInput}"&type=track&market=US&limit=10&include_external=audio&market=${profile.country}`);
     console.log(songInfo)
 
 
@@ -129,7 +142,6 @@ async function outputSongs() {
         let string = `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${trackid}?utm_source=generator" height="10%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>                <p>&nbsp;</p>`
 
         searchDiv.innerHTML += string
-        searchDiv.innerHTML += "</p><p>&nbsp;</p>";
     }
     
 }
@@ -235,15 +247,4 @@ async function fetchSong(token, request) {
 // Updates UI with profile data
 function populateUI(profile) {
     document.getElementById("displayName").innerText = profile.display_name;
-    if (profile.images[0]) {
-        const profileImage = new Image(200, 200);
-        profileImage.src = profile.images[0].url;
-        document.getElementById("avatar").appendChild(profileImage);
-        document.getElementById("imgUrl").innerText = profile.images[0].url;
-    }
-    document.getElementById("id").innerText = profile.id;
-    document.getElementById("uri").innerText = profile.uri;
-    document.getElementById("uri").setAttribute("href", profile.external_urls.spotify);
-    document.getElementById("url").innerText = profile.href;
-    document.getElementById("url").setAttribute("href", profile.href);
 }
