@@ -9,25 +9,20 @@ const user = "user";
 const artistDiv = document.getElementById('artists');
 const artistGenreDiv = document.getElementById('artistsByGenre');
 const searchDiv = document.getElementById('search');
+let timeframe = document.getElementById("timeframe").value
 
 // Button function redirects
 document.getElementById("apiButton").onclick = callAPI;
 document.getElementById("searchButton").onclick = outputSongs;
 document.getElementById("hideButton").onclick = hideRight;
+document.getElementById("timeframe").onchange = updateTimeframe;
 
 const accessToken = await getAccessToken(user, code);
 const profile = await fetchProfile(accessToken);
 var genreDict = {};
 
-
-
 // Code to run after authorization (Artist finding, etc)
 if (code) {
-
-    // Write out top artist w/ genre
-    const topInfo = await fetchTop(accessToken);
-
-
     // Make profile/search visible
     populateUI(profile);
     document.getElementById('apiButton').style.display = "none";
@@ -36,57 +31,91 @@ if (code) {
     document.getElementById('artists').style.display = "inline";
     document.getElementById('artistsByGenre').style.display = "inline";
 
-    let listString = "";
-
-    // Show your top 50 artists with their genres
-    for (let i = 0; i < topInfo.items.length; i++){
-        let genres = topInfo.items[i].genres;
-        let artist = topInfo.items[i].name;
-
-        
-        // Adding genres/artists to genreDict
-        for (var j = 0; j < genres.length; j++) {
-
-            // Create new key for unique genres
-            if (!(genres[j] in genreDict))
-                genreDict[genres[j]] = [artist]
-
-            // Add to existing genre key if the artist is not found in it
-            // (Artists can have multiple genres? This might not be necessary)
-            else if (!(artist in genreDict[genres[j]]))
-                genreDict[genres[j]].push(artist)
-
-        }
-
-        if (genres.length == 0)
-            genres = "N/A"
-
-        listString += `<li><b>${artist}</b>, Genres: ${genres}</li>\n`   
-    }
-
-    artistDiv.innerHTML += "<ol type=\"1\">\n" + listString + "</ol>\n"
-    // Output artists by each genre
-
-    for (var key in genreDict) {
-        artistGenreDiv.innerHTML += `<p>${key}:<p>\n<ul>`
-
-        // Print list of artists for that genre
-        for (var i = 0; i < genreDict[key].length; i++) {
-            artistGenreDiv.innerHTML += `<li>${genreDict[key][i]}</li>`
-        }
-
-        artistGenreDiv.innerHTML += "</ul>\n<p>&nbsp;</p>";
-    }
-
-    
-
-
-  
-  
-
-
-    
+    updateTimeframe();
 }
+
+    
+
+
+async function updateTimeframe() {
+
+    // This if might be redundant to be honest
+    if (code) {
+
+        timeframe = document.getElementById("timeframe").value;
+
+        // Reset genre dictionary and top artist/genre text
+        genreDict = {};
+        artistDiv.innerHTML = "";
+        artistGenreDiv.innerHTML = ""
+
+        // Hide top artists until updated (this doesnt work????)
+        document.getElementById("rightSide").style.display = "none";
+
+        // Update header for top artists
+        if (timeframe == "long_term")
+            document.getElementById("topArtist").innerHTML = "Top 50 Artists (All-time)";
+        else if (timeframe == "medium_term")
+            document.getElementById("topArtist").innerHTML = "Top 50 Artists (Last 6 months)";
+        else if (timeframe == "short_term")
+            document.getElementById("topArtist").innerHTML = "Top 50 Artists (Last 1 month)";
+
+        // Show top artists if the option was already pressed
+        if (document.getElementById("hideButton").value == "Hide top artists")
+            document.getElementById("rightSide").style.display = "inline";
+
+
+        // Show your top 50 artists with their genres
+        let topInfo = await fetchTop(accessToken);
+        let listString = "";
+        
+        for (let i = 0; i < topInfo.items.length; i++){
+            let genres = topInfo.items[i].genres;
+            let artist = topInfo.items[i].name;
+    
+            
+            // Adding genres/artists to genreDict
+            for (var j = 0; j < genres.length; j++) {
+    
+                // Create new key for unique genres
+                if (!(genres[j] in genreDict))
+                    genreDict[genres[j]] = [artist]
+    
+                // Add to existing genre key if the artist is not found in it
+                // (Artists can have multiple genres? This might not be necessary)
+                else if (!(artist in genreDict[genres[j]]))
+                    genreDict[genres[j]].push(artist)
+    
+            }
+    
+            if (genres.length == 0)
+                genres = "N/A"
+            
+            listString += `<li><b>${artist}</b>, Genres: ${genres.slice(0,5)}</li>\n`  
+    
+        }
+    
+        artistDiv.innerHTML += "<ol type=\"1\">\n" + listString + "</ol>\n"
+
+        // Output artists by each genre
+        for (var key in genreDict) {
+            artistGenreDiv.innerHTML += `<p>${key}:<p>\n<ul>`
+    
+            // Print list of artists for that genre
+            for (var i = 0; i < genreDict[key].length; i++) {
+                artistGenreDiv.innerHTML += `<li>${genreDict[key][i]}</li>`
+            }
+    
+            artistGenreDiv.innerHTML += "</ul>\n<p>&nbsp;</p>";
+        }
+
+    }
+}
+  
+
+
+    
+
 
 // For initial access token request
 function callAPI() {
@@ -222,7 +251,7 @@ async function fetchProfile(token) {
 
 // Gets top song information
 async function fetchTop(token) {
-    const result = await fetch("https://api.spotify.com/v1/me/top/artists?time_range=long_term&limit=50", {
+    const result = await fetch(`https://api.spotify.com/v1/me/top/artists?time_range=${timeframe}&limit=50`, {
         method: "GET", headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -237,11 +266,6 @@ async function fetchSong(token, request) {
 
     return await result.json();
 }
-
-
-
-
-
 
 // Updates UI with profile data
 function populateUI(profile) {

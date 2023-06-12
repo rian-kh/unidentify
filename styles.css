@@ -1,0 +1,41 @@
+
+/* Sides of website */
+
+/* leftSide: Username, buttons, recommendation results */
+/* rightSide: Top artists/genres */
+#leftSide { 
+    float: left;
+}
+
+#rightSide {
+    display: none;
+    float: right;
+}
+
+
+
+/* Elements hidden by default (revealed after authentication): */
+
+/* profile: Username */
+/* searchBox: Buttons for recommending a song/showing top artists */
+#profile {
+    display: none;
+}
+
+#searchBox {
+    display: none;
+}
+
+
+
+/* Elements hidden by default (revealed after "Show top artists" button press) */
+
+/* artists: Top 50 artists of given timeframe w/ genres  */
+/* artistsByGenre: Top 50 artists of given timeframe, but sorted by genre first */
+#artists {
+    display: none;
+}
+
+#artistsByGenre {
+    display: none;
+}

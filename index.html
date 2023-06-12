@@ -4,20 +4,31 @@
     <head>
         <title>Unidentify</title>
         <script src="script.js" type="module"></script>
+        <link rel="stylesheet" href="styles.css">
     </head>
 
     <body>
-        <div style="float: left">
+        <div id="leftSide" style="float: left">
             <h1>Unidentify</h1>
             <p>Uses your Spotify data to <i>(try to)</i> find obscure songs matching the genres of your top artists.</p>
-            <button id="apiButton" style="display: inline;">Get Spotify data</button>
+            <button id="apiButton">Get Spotify data</button>
             <p>&nbsp;</p>
-            <h3 id="profile" style="display: none;">Logged in as <span id="displayName"></span></h3>
+            <h3 id="profile">Logged in as <span id="displayName"></span></h3>
             <p>&nbsp;</p>
 
-            <div id="searchBox" style="display: none;">
+            <div id="searchBox">
                 <button id="searchButton">Recommend a song...</button>
                 <input type="button" value="Show top artists" id="hideButton"></input>
+
+
+                <label>Top artist timeframe: </label>
+                <select id="timeframe"> 
+                    <option value="long_term">All-time</option> 
+                    <option value="medium_term">Last 6 months</option> 
+                    <option value="short_term">Last 1 month</option> 
+                </select>
+
+
                 <div id="search">
                 
                 </div>
@@ -27,16 +38,16 @@
         </div>
 
         
-        <div id="rightSide" style="display: none; float: right">
-            <h1>Top 50 Artists:</h1>
-            <div id="artists" style="display: none; overflow-y:auto; height:400px; width:400px;" >
+        <div id="rightSide">
+            <h1 id="topArtist">Top 50 Artists:</h1>
+            <div id="artists">
                 
 
 
             </div>
 
             <h1>Artists by Genre:</h1>
-            <div id="artistsByGenre" style="display: none; overflow-y:auto; height:400px; width:400px;">
+            <div id="artistsByGenre">
                 
 
 
