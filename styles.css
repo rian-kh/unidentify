@@ -1,4 +1,12 @@
 
+
+/* Background colour */
+body {
+    background-color: #9fdcb5;
+}
+
+
+
 /* Sides of website */
 
 /* leftSide: Username, buttons, recommendation results */
@@ -17,14 +25,21 @@
 /* Elements hidden by default (revealed after authentication): */
 
 /* profile: Username */
+/* logOutButton: Button to log out */
 /* searchBox: Buttons for recommending a song/showing top artists */
 #profile {
+    display: none;
+}
+
+#logOutButton {
     display: none;
 }
 
 #searchBox {
     display: none;
 }
+
+
 
 
 

@@ -13,7 +13,8 @@
             <p>Uses your Spotify data to <i>(try to)</i> find obscure songs matching the genres of your top artists.</p>
             <button id="apiButton">Get Spotify data</button>
             <p>&nbsp;</p>
-            <h3 id="profile">Logged in as <span id="displayName"></span></h3>
+            <h3 id="profile">Logged in as <span id="displayName"></span>&nbsp;&nbsp;&nbsp;&nbsp;</h3>
+            <button id="logOutButton">Log out</button>
             <p>&nbsp;</p>
 
             <div id="searchBox">
@@ -22,38 +23,35 @@
 
 
                 <label>Top artist timeframe: </label>
-                <select id="timeframe"> 
-                    <option value="long_term">All-time</option> 
-                    <option value="medium_term">Last 6 months</option> 
-                    <option value="short_term">Last 1 month</option> 
+                <select id="timeframe">
+                    <option value="long_term">All-time</option>
+                    <option value="medium_term">Last 6 months</option>
+                    <option value="short_term">Last 1 month</option>
                 </select>
 
 
                 <div id="search">
-                
+
                 </div>
 
             </div>
 
         </div>
 
-        
+
         <div id="rightSide">
             <h1 id="topArtist">Top 50 Artists:</h1>
             <div id="artists">
-                
-
 
             </div>
 
             <h1>Artists by Genre:</h1>
             <div id="artistsByGenre">
-                
-
 
             </div>
 
         </div>
 
     </body>
+
 </html>
