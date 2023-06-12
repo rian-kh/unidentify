@@ -17,9 +17,23 @@ document.getElementById("searchButton").onclick = outputSongs;
 document.getElementById("hideButton").onclick = hideRight;
 document.getElementById("timeframe").onchange = updateTimeframe;
 
+// Redirects to original site if reloaded, adapted from https://stackoverflow.com/a/53307588/21809626
+const pageAccessedByReload = (
+    (window.performance.navigation && window.performance.navigation.type === 1) ||
+      window.performance
+        .getEntriesByType('navigation')
+        .map((nav) => nav.type)
+        .includes('reload')
+  );
+
+if (pageAccessedByReload)
+    document.location = "https://localhost"
+
+
 const accessToken = await getAccessToken(user, code);
 const profile = await fetchProfile(accessToken);
 var genreDict = {};
+
 
 // Code to run after authorization (Artist finding, etc)
 if (code) {
