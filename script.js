@@ -3,7 +3,6 @@
 
 // Div constants
 const user = "user";
-const artistDiv = document.getElementById('artists');
 const artistGenreDiv = document.getElementById('artistsByGenre');
 const searchDiv = document.getElementById('search');
 const userId = "userId"
@@ -63,11 +62,13 @@ if (document.cookie.split('accessToken=').length == 2 && !(document.cookie.split
 async function searchSong() {
 
     playlistJSON = await getInfo();
+    console.log(playlistJSON)
 
     // Only run if playlist was successfully found
     if (elementsVisible) {
         await updateDict();
-        outputSong()
+        updateRight();
+        await outputSong()
     }
 
 }
@@ -93,6 +94,7 @@ async function getInfo() {
         document.getElementById("hideButton").style.display = "none";
         elementsVisible = false;
         prevPlaylistLink = null;
+        searchDiv.innerHTML = ""
         return;
     }
     
@@ -118,6 +120,7 @@ async function getInfo() {
         document.getElementById("hideButton").style.display = "none";
         elementsVisible = false;
         prevPlaylistLink = null;
+        searchDiv.innerHTML = ""
         return;
     }
 
@@ -149,11 +152,7 @@ async function updateDict() {
 
     // Reset genre dictionary and top artist/genre text
     genreDict = {};
-    artistDiv.innerHTML = "";
     artistGenreDiv.innerHTML = "";
-
-    // Hide top artists until updated (this doesnt work????)
-    document.getElementById("rightSide").style.display = "none";
 
 
     // Show your top 50 artists with their genres
@@ -219,6 +218,24 @@ function toggleRight() {
     }
 }
 
+
+function updateRight() {
+
+    document.getElementById('genreTitle').innerHTML = `Artists by Genre in ${playlistJSON.name}:`
+    // Output artists by each genre
+    for (var key in genreDict) {
+        artistGenreDiv.innerHTML += `<p>${key}:<p>\n<ul>`
+
+        // Print list of artists for that genre
+        for (var i = 0; i < genreDict[key].length; i++) {
+            artistGenreDiv.innerHTML += `<li>${genreDict[key][i]}</li>`
+        }
+
+        // Add to artistGenreDiv's HTML a list of each artist/genre
+        artistGenreDiv.innerHTML += "</ul>\n<p>&nbsp;</p>";
+    }
+
+}
 
 // Outputs 5 songs matching the genre specified
 async function outputSong() {
