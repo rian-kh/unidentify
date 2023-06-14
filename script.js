@@ -3,20 +3,17 @@
 
 
 // Div constants
-const params = new URLSearchParams(window.location.search);
-let code = params.get("code");
-const user = atob("YzNjNjQ4MDNiZTNiNGVkNWE4NGQ1MGIxODgxMjAxOTg=");
+const user = "user";
 const artistDiv = document.getElementById('artists');
 const artistGenreDiv = document.getElementById('artistsByGenre');
 const searchDiv = document.getElementById('search');
-let timeframe = document.getElementById("timeframe").value
+const userId = "userId"
 
 // Button function redirects
-document.getElementById("apiButton").onclick = callAPI;
 document.getElementById("searchButton").onclick = outputSongs;
-document.getElementById("hideButton").onclick = toggleRight;
-document.getElementById("timeframe").onchange = updateTimeframe;
-document.getElementById("logOutButton").onclick = logOut;
+//document.getElementById("hideButton").onclick = toggleRight;
+//document.getElementById("timeframe").onchange = updateTimeframe;
+
 
 // Definition of global variables
 let accessToken;
@@ -26,9 +23,16 @@ var genreDict = {};
 
 
 
+// Store access token in cookies to reduce API requests
+if (document.cookie.split('accessToken=').length == 2) {
+    accessToken = document.cookie.split('accessToken=')[1]
+} else {
+    accessToken = await getAccessToken();
+    document.cookie = `accessToken=${accessToken}; max-age=3600;`
+}
+
 
 // Code ran on page load
-
 
 // Redirects to original site if reloaded, adapted from https://stackoverflow.com/a/53307588/21809626
 const pageAccessedByReload = (
@@ -40,43 +44,27 @@ const pageAccessedByReload = (
 );
 
 if (pageAccessedByReload)
-    document.location = "https://rian-kh.github.io/unidentify"
+    document.location = "http://localhost:5173/"
 
 
-// Check if cookie containing previous access token exists,
-// and auth wasn't ran
-// Code is set to "a" to satisfy authorization condition
-if ((document.cookie.split('accessToken=').length == 2) && !(code)) {
 
-    accessToken = document.cookie.split('accessToken=')[1]
-    code = "a"
-
-}
 
 
 // Code to run after authorization (Artist finding, etc)
-if (code) {
+if (accessToken) {
 
-    // Only get access token w/ auth if there is no cookie
-    if (!(document.cookie.split('accessToken=').length == 2))
-        accessToken = await getAccessToken(user, code);
+    
 
-    profile = await fetchProfile(accessToken);
 
-    // Create cookie containing the access token for future uses
-    document.cookie = `accessToken=${accessToken}; max-age=34560000;`;
+
 
     // Make profile/search visible
-    populateUI(profile);
-    document.getElementById('apiButton').style.display = "none";
-    document.getElementById('logOutButton').style.display = "inline";
-    document.getElementById('profile').style.display = "inline";
-    document.getElementById('searchBox').style.display = "inline";
+    document.getElementById('search').style.display = "inline";
     document.getElementById('artists').style.display = "inline";
     document.getElementById('artistsByGenre').style.display = "inline";
 
     // Initial artist/genre output, with long_term as default timeframe
-    updateTimeframe();
+    //updateTimeframe();
 }
 
 
@@ -88,14 +76,6 @@ if (code) {
 
 
 
-// Functions
-
-// Ran on "Log out" press
-// Sets the access token cookie to expire, and refreshes
-function logOut() {
-    document.cookie = "accessToken=; max-age=0;";
-    document.location = "https://rian-kh.github.io/unidentify"
-}
 
 
 
@@ -174,15 +154,6 @@ async function updateTimeframe() {
 }
 
 
-
-// Ran on "Get spotify data" press
-// Would've just put this in the .onclick redirect but you can't include parameters?
-function callAPI() {
-    redirectToAuthCodeFlow(user);
-}
-
-
-
 // Ran on "Show/Hide top artists" press
 function toggleRight() {
 
@@ -221,16 +192,6 @@ async function outputSongs() {
 }
 
 
-
-// Gets top song information
-async function fetchTop(token) {
-    const result = await fetch(`https://api.spotify.com/v1/me/top/artists?time_range=${timeframe}&limit=50`, {
-        method: "GET", headers: { Authorization: `Bearer ${token}` }
-    });
-
-    return await result.json();
-}
-
 // Searches for a song given genre
 async function fetchSong(token, request) {
     const result = await fetch(request, {
@@ -243,97 +204,27 @@ async function fetchSong(token, request) {
 
 
 
-
-// From Spotify Web API Template:
-// Redirects to Spotify authorization 
-export async function redirectToAuthCodeFlow(user) {
-    const verifier = generateCodeVerifier(128);
-    const challenge = await generateCodeChallenge(verifier);
-
-    localStorage.setItem("verifier", verifier);
-
-
-    const params = new URLSearchParams();
-    params.append("client_id", user);
-    params.append("response_type", "code");
-    params.append("redirect_uri", "https://rian-kh.github.io/unidentify");
-
-    // Parameters of permissions we want from the user
-    params.append("scope", "user-top-read user-read-recently-played user-read-private");
-
-    params.append("code_challenge_method", "S256");
-    params.append("code_challenge", challenge);
-
-    document.location = `https://accounts.spotify.com/authorize?${params.toString()}`;
-}
-
-
-
-// From Spotify Web API Template:
-// Used for authentication
-function generateCodeVerifier(length) {
-    let text = '';
-    let possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for (let i = 0; i < length; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-}
-
-
-
-// From Spotify Web API Template:
-// Used for authentication
-async function generateCodeChallenge(codeVerifier) {
-    const data = new TextEncoder().encode(codeVerifier);
-    const digest = await window.crypto.subtle.digest('SHA-256', data);
-    return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-}
-
-
-
 // From Spotify Web API Template:
 // Verifies POST request, returns access token
-export async function getAccessToken(user, code) {
-    const verifier = localStorage.getItem("verifier");
+export async function getAccessToken() {
+    
 
     const params = new URLSearchParams();
-    params.append("client_id", user);
-    params.append("grant_type", "authorization_code");
-    params.append("code", code);
-    params.append("redirect_uri", "https://rian-kh.github.io/unidentify");
-    params.append("code_verifier", verifier);
+    params.append("grant_type", "client_credentials");
 
     const result = await fetch("https://accounts.spotify.com/api/token", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: { 'Authorization': 'Basic ' + btoa(user + ':' + userId), "Content-Type": "application/x-www-form-urlencoded" },
         body: params
     });
 
     const { access_token } = await result.json();
+
+    console.log(access_token)
     return access_token;
 }
 
 
 
-// From Spotify Web API Template:
-// Gets profile information
-async function fetchProfile(token) {
-    const result = await fetch("https://api.spotify.com/v1/me", {
-        method: "GET", headers: { Authorization: `Bearer ${token}` }
-    });
-
-    return await result.json();
-}
 
 
-
-// From Spotify Web API Template:
-// Updates UI with profile data
-function populateUI(profile) {
-    document.getElementById("displayName").innerText = profile.display_name;
-}
