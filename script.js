@@ -7,11 +7,10 @@ const artistDiv = document.getElementById('artists');
 const artistGenreDiv = document.getElementById('artistsByGenre');
 const searchDiv = document.getElementById('search');
 const userId = "userId"
-
-// Variables for song searching, determining visibility
 let playlistJSON;
 let playlistLink = "";
 let prevPlaylistLink;
+let firstRun = true;
 let elementsVisible = false;
 
 
@@ -46,7 +45,8 @@ if (pageAccessedByReload)
 
 
 // Store access token in cookies to reduce API requests, if found
-if (document.cookie.split('accessToken=').length == 2) {
+// Cookie can also become undefined for some reason? Maybe because of being offline
+if (document.cookie.split('accessToken=').length == 2 && !(document.cookie.split('accessToken=undefined').length == 2)) {
     accessToken = document.cookie.split('accessToken=')[1]
 } else {
     accessToken = await getAccessToken();
@@ -64,7 +64,12 @@ async function searchSong() {
 
     playlistJSON = await getInfo();
 
-    console.log(playlistJSON)
+    // Only run if playlist was successfully found
+    if (elementsVisible) {
+        await updateDict();
+        outputSong()
+    }
+
 }
 
 
@@ -78,8 +83,7 @@ function updateLink() {
 // Get JSON containing playlist songs, determine visiblity of other elements
 async function getInfo() {
     
-
-    let playlistId = playlistLink.match(/(?<=\/playlist\/).*(?=[\?])|(?<=\/playlist\/).*/)
+    let playlistId = playlistLink.match(/(?<=\/playlist\/).*(?=\?)|(?<=\/playlist\/).*/)
 
     // Code to run if regex fails (not a playlist link)
     if (playlistId == null) {
@@ -97,13 +101,11 @@ async function getInfo() {
     if (prevPlaylistLink == playlistLink)
         return playlistJSON;
 
-    const result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=CA&fields=name%2Cowner.display_name%2Ctracks.items.track`, {
+    
+    
+    const result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=CA`, {
             method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
      });
-    
-
-    // Set this link to now be the previous link
-    prevPlaylistLink = playlistLink;
 
 
     let resultJSON = await result.json();
@@ -135,7 +137,15 @@ async function getInfo() {
 
 
 // Ran on "Timeframe" dropdown change
-async function updateRight(json) {
+async function updateDict() {
+
+    // If the link is the same AND it's the first search, don't update dict
+    // On the first search, prev and playlist are the same because there wasn't anything before.
+    if ((prevPlaylistLink == playlistLink) && !(firstRun)) {
+        return;
+    }
+
+    firstRun = false;
 
     // Reset genre dictionary and top artist/genre text
     genreDict = {};
@@ -148,11 +158,27 @@ async function updateRight(json) {
 
     // Show your top 50 artists with their genres
     let listString = "";
+    let artistDict = {};
 
-    for (let i = 0; i < topInfo.items.length; i++) {
-        let genres = topInfo.items[i].genres;
-        let artist = topInfo.items[i].name;
+    // Get unique artists in playlist
+    for (let i = 0; i < playlistJSON.tracks.items.length; i++) {
+        let artist = playlistJSON.tracks.items[i].track.artists[0];
 
+        if (!(artist.name in artistDict))
+            artistDict[artist.name] = artist.id;
+    }
+
+
+    // Loop through each unique artist, add to genreDict
+    for (var key in artistDict) {
+       let result = await fetch(`https://api.spotify.com/v1/artists/${artistDict[key]}`, {
+            method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        let resultJSON = await result.json()
+
+        let genres = resultJSON.genres;
+        let artist = resultJSON.name;
 
         // Adding genres/artists to genreDict
         for (var j = 0; j < genres.length; j++) {
@@ -168,28 +194,16 @@ async function updateRight(json) {
 
         }
 
-        // Add to artistDiv's HTML a list of each artist/genre
-        if (genres.length == 0)
-            genres = "N/A"
-
-        listString += `<li><b>${artist}</b>, Genres: ${genres.slice(0, 5)}</li>\n`
-
     }
 
-    artistDiv.innerHTML += "<ol type=\"1\">\n" + listString + "</ol>\n"
+    console.log("genreDict formed")
+    console.log(artistDict)
+    console.log(Object.keys(artistDict).length)
 
-    // Output artists by each genre
-    for (var key in genreDict) {
-        artistGenreDiv.innerHTML += `<p>${key}:<p>\n<ul>`
-
-        // Print list of artists for that genre
-        for (var i = 0; i < genreDict[key].length; i++) {
-            artistGenreDiv.innerHTML += `<li>${genreDict[key][i]}</li>`
-        }
-
-        // Add to artistGenreDiv's HTML a list of each artist/genre
-        artistGenreDiv.innerHTML += "</ul>\n<p>&nbsp;</p>";
-    }
+    console.log(genreDict)
+    
+    // Update previous link to be this one
+    prevPlaylistLink = playlistLink;
 
 }
 
@@ -207,7 +221,7 @@ function toggleRight() {
 
 
 // Outputs 5 songs matching the genre specified
-async function outputSongs(json) {
+async function outputSong() {
 
     // Random genre from dictionary, adapted from https://stackoverflow.com/questions/61042479/how-to-get-a-random-key-value-from-a-javascript-object
     // Separating keys from genreInput is just for readability
@@ -221,7 +235,7 @@ async function outputSongs(json) {
     genreInput = genreInput.replace(/\s/g, "+")
 
     // Get 20 songs matching genre, and pick a random one to show
-    const songInfo = await fetchSong(accessToken, `https://api.spotify.com/v1/search?q=tag%3Ahipster+genre%3A"${genreInput}"&type=track&market=US&limit=20&include_external=audio&market=${profile.country}`);
+    const songInfo = await fetchSong(accessToken, `https://api.spotify.com/v1/search?q=tag%3Ahipster+genre%3A"${genreInput}"&type=track&market=US&limit=20&include_external=audio`);
     let randomSongID = songInfo.tracks.items[Math.floor(Math.random() * songInfo.tracks.items.length)].id
 
     // Display found song w/ details+ embed
