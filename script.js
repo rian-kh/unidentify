@@ -1,18 +1,19 @@
 // Code adapted from https://developer.spotify.com/documentation/web-api/howtos/web-app-profile
 
 
-
 // Div constants
 const user = "user";
 const artistDiv = document.getElementById('artists');
 const artistGenreDiv = document.getElementById('artistsByGenre');
 const searchDiv = document.getElementById('search');
 const userId = "userId"
+let playlistLink;
 
 // Button function redirects
-document.getElementById("searchButton").onclick = outputSongs;
+document.getElementById("searchButton").onclick = test;
+document.getElementById('playlist').onchange = updateLink;
 //document.getElementById("hideButton").onclick = toggleRight;
-//document.getElementById("timeframe").onchange = updateTimeframe;
+//document.getElementById("timeframe").onchange = updateRight;
 
 
 // Definition of global variables
@@ -22,6 +23,35 @@ var genreDict = {};
 
 
 
+function updateLink() {
+    playlistLink = document.getElementById('playlist').value;
+}
+
+async function test() {
+
+    let playlistId = playlistLink.match(/(?<=\/playlist\/).*(?=[\?])|(?<=\/playlist\/).*/)
+
+    if (playlistId == null) {
+        console.log("Invalid link")
+        return;
+    }
+    
+    const result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=CA`, {
+        method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    let value = await result.json();
+
+    if (value.error) {
+        console.log("Invalid playlist")
+        return;
+    }
+
+    console.log(value)
+}
+
+
+// Code ran on page load
 
 // Store access token in cookies to reduce API requests
 if (document.cookie.split('accessToken=').length == 2) {
@@ -32,7 +62,6 @@ if (document.cookie.split('accessToken=').length == 2) {
 }
 
 
-// Code ran on page load
 
 // Redirects to original site if reloaded, adapted from https://stackoverflow.com/a/53307588/21809626
 const pageAccessedByReload = (
@@ -50,13 +79,8 @@ if (pageAccessedByReload)
 
 
 
-// Code to run after authorization (Artist finding, etc)
-if (accessToken) {
-
-    
-
-
-
+// Code to run after playlist is given (Artist finding, etc)
+if (genreDict) {
 
     // Make profile/search visible
     document.getElementById('search').style.display = "inline";
@@ -64,7 +88,7 @@ if (accessToken) {
     document.getElementById('artistsByGenre').style.display = "inline";
 
     // Initial artist/genre output, with long_term as default timeframe
-    //updateTimeframe();
+    //updateRight();
 }
 
 
@@ -80,9 +104,9 @@ if (accessToken) {
 
 
 // Ran on "Timeframe" dropdown change
-async function updateTimeframe() {
+async function updateRight() {
 
-    timeframe = document.getElementById("timeframe").value;
+    
 
     // Reset genre dictionary and top artist/genre text
     genreDict = {};
@@ -220,7 +244,6 @@ export async function getAccessToken() {
 
     const { access_token } = await result.json();
 
-    console.log(access_token)
     return access_token;
 }
 
