@@ -3,6 +3,7 @@
 
 // Div constants
 const user = "user";
+const artistDiv = document.getElementById('artists');
 const artistGenreDiv = document.getElementById('artistsByGenre');
 const searchDiv = document.getElementById('search');
 const userId = "userId"
@@ -23,6 +24,7 @@ document.getElementById("hideButton").onclick = toggleRight;
 let accessToken;
 let profile;
 var genreDict = {};
+var artistDict = {};
 
 
 
@@ -152,25 +154,31 @@ async function updateDict() {
 
     // Reset genre dictionary and top artist/genre text
     genreDict = {};
+    artistDiv.innerHTML = "";
     artistGenreDiv.innerHTML = "";
 
 
     // Show your top 50 artists with their genres
     let listString = "";
-    let artistDict = {};
+    artistDict = {};
 
     // Get unique artists in playlist
+    // artistDict stores artist name as key, with artist id and # of occurences as a list value
     for (let i = 0; i < playlistJSON.tracks.items.length; i++) {
         let artist = playlistJSON.tracks.items[i].track.artists[0];
 
         if (!(artist.name in artistDict))
-            artistDict[artist.name] = artist.id;
+            artistDict[artist.name] = [artist.id, 1];
+        else
+            artistDict[artist.name][1]++;
     }
+
+    
 
 
     // Loop through each unique artist, add to genreDict
     for (var key in artistDict) {
-       let result = await fetch(`https://api.spotify.com/v1/artists/${artistDict[key]}`, {
+       let result = await fetch(`https://api.spotify.com/v1/artists/${artistDict[key][0]}`, {
             method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
         });
 
@@ -178,6 +186,10 @@ async function updateDict() {
 
         let genres = resultJSON.genres;
         let artist = resultJSON.name;
+
+        // Add genres to artistDict list value, for outputting by # of occurences
+        // (could probably combine both dicts but this seems nicer)
+        artistDict[artist].push(genres)
 
         // Adding genres/artists to genreDict
         for (var j = 0; j < genres.length; j++) {
@@ -194,6 +206,7 @@ async function updateDict() {
         }
 
     }
+    console.log(artistDict)
 
     console.log("genreDict formed")
     console.log(artistDict)
@@ -221,8 +234,47 @@ function toggleRight() {
 
 function updateRight() {
 
-    document.getElementById('genreTitle').innerHTML = `Artists by Genre in ${playlistJSON.name}:`
+    artistDiv.innerHTML = ""
+    artistGenreDiv.innerHTML = ""
+
+    // Output artists by # of occurences
+    document.getElementById('artistTitle').innerHTML = `Artists by occurrences in <i>${playlistJSON.name}</i>:`
+    let listString = "";
+
+    // Sort artists by # of occurences
+
+    
+
+    var items = Object.keys(artistDict).map(
+        (key) => { return [key, artistDict[key][1]] });
+
+    items.sort(
+            (first, second) => { return second[1] - first[1]  }
+          );
+
+    var keys = items.map(
+            (e) => { return e[0] });
+    
+    
+
+    for (var i = 0; i < keys.length; i++) {
+        let artist = keys[i]
+        let occurences = artistDict[artist][1]
+        let genres = artistDict[artist][2]
+
+
+        if (genres.length == 0)
+            genres = "N/A"
+
+        listString += `<li><b>${artist}</b>, Occurrences: ${occurences}, Genres: ${genres.slice(0, 5)}</li>\n`
+    }
+
+    artistDiv.innerHTML += "<ol type=\"1\">\n" + listString + "</ol>\n"
+
+
     // Output artists by each genre
+    document.getElementById('genreTitle').innerHTML = `Artists by Genre in <i>${playlistJSON.name}</i>:`
+
     for (var key in genreDict) {
         artistGenreDiv.innerHTML += `<p>${key}:<p>\n<ul>`
 
@@ -256,7 +308,7 @@ async function outputSong() {
     let randomSongID = songInfo.tracks.items[Math.floor(Math.random() * songInfo.tracks.items.length)].id
 
     // Display found song w/ details+ embed
-    searchDiv.innerHTML = `<h1>Found a song:</h1>\n<p>Genre: <b>${genreInput.replace(/\+/g, " ")}</b>, matching your top artist: <b>${matchingArtist}</b></p>`;
+    searchDiv.innerHTML = `<h1>Found a song:</h1>\n<p>Genre: <b>${genreInput.replace(/\+/g, " ")}</b>, matching artist: <b>${matchingArtist}</b></p>`;
     searchDiv.innerHTML += `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${randomSongID}?utm_source=generator" height="10%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>                <p>&nbsp;</p>`
 
 }
@@ -289,7 +341,6 @@ export async function getAccessToken() {
     });
 
     const { access_token } = await result.json();
-
     return access_token;
 }
 

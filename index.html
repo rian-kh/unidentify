@@ -11,7 +11,8 @@
         <div id="leftSide" style="float: left">
             <h1>Unidentify</h1>
             <p>Uses a playlist link to <i>(try to)</i> find obscure songs matching the genres of artists in that playlist.</p>
-
+            <p>Playlist must be <b>public</b>.</p>
+            <p>&nbsp;</p>
             <label for="playlist">Playlist link: </label>
             <input type="text" id="playlist">
             <button id="searchButton">Find a song...</button>
@@ -30,6 +31,11 @@
 
 
         <div id="rightSide">
+
+            <h1 id="artistTitle"></h1>
+            <div id="artists">
+
+            </div>
 
             <h1 id="genreTitle"></h1>
             <div id="artistsByGenre">
