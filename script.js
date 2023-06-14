@@ -7,11 +7,7 @@ const artistDiv = document.getElementById('artists');
 const artistGenreDiv = document.getElementById('artistsByGenre');
 const searchDiv = document.getElementById('search');
 const userId = "userId"
-let playlistJSON;
-let playlistLink = "";
-let prevPlaylistLink;
-let firstRun = true;
-let elementsVisible = false;
+
 
 
 // Button function redirects
@@ -23,6 +19,12 @@ document.getElementById("hideButton").onclick = toggleRight;
 // Definition of global variables
 let accessToken;
 let profile;
+let playlistJSON;
+let playlistLink = "";
+let nextPage = null;
+let prevPlaylistLink;
+let firstRun = true;
+let elementsVisible = false;
 var genreDict = {};
 var artistDict = {};
 
@@ -56,19 +58,23 @@ if (document.cookie.split('accessToken=').length == 2 && !(document.cookie.split
 
 
 
-
-
-
-
 // Main code ran for every search
 async function searchSong() {
 
     playlistJSON = await getInfo();
-    console.log(playlistJSON)
 
     // Only run if playlist was successfully found
     if (elementsVisible) {
+        
+       while (!(nextPage == null)) {
+        console.log("Updating dictionary...")
         await updateDict();
+
+        console.log("Running getInfo...")
+        playlistJSON = await getInfo();
+       }
+
+
         updateRight();
         await outputSong()
     }
@@ -96,21 +102,30 @@ async function getInfo() {
         document.getElementById("hideButton").style.display = "none";
         elementsVisible = false;
         prevPlaylistLink = null;
+        nextPage = null;
         searchDiv.innerHTML = ""
         return;
     }
     
     
     // If this link is the same as the last, return as the playlist info is the same
-    if (prevPlaylistLink == playlistLink)
+    if (prevPlaylistLink == playlistLink && !(nextPage))
         return playlistJSON;
 
     
-    
-    const result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=CA`, {
-            method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
-     });
+    let result;
 
+    // Load next page redirect if given, otherwise load from playlist input
+    if (nextPage) {
+        result = await fetch(`${nextPage}`, {
+            method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+    } else {
+        result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=CA`, {
+                method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
+        });
+    }
 
     let resultJSON = await result.json();
 
@@ -123,6 +138,7 @@ async function getInfo() {
         elementsVisible = false;
         prevPlaylistLink = null;
         searchDiv.innerHTML = ""
+        nextPage = null;
         return;
     }
 
@@ -136,6 +152,18 @@ async function getInfo() {
     }
 
     console.log("Playlist retrieved")
+
+
+    
+
+    if (nextPage)
+        nextPage = resultJSON.next
+    else   
+        nextPage = resultJSON.tracks.next
+
+    console.log(resultJSON)
+    console.log(`Next page: ${nextPage}`)
+    
     return resultJSON;
     
 }
