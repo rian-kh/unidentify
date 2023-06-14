@@ -18,13 +18,14 @@ document.getElementById("hideButton").onclick = toggleRight;
 
 // Definition of global variables
 let accessToken;
-let profile;
 let playlistJSON;
 let playlistLink = "";
+let playlistName;
 let nextPage = null;
 let prevPlaylistLink;
 let firstRun = true;
 let elementsVisible = false;
+let loopComplete = false;
 var genreDict = {};
 var artistDict = {};
 
@@ -64,20 +65,49 @@ async function searchSong() {
     playlistJSON = await getInfo();
 
     // Only run if playlist was successfully found
-    if (elementsVisible) {
-        
-       while (!(nextPage == null)) {
-        console.log("Updating dictionary...")
-        await updateDict();
+    if (elementsVisible && !(prevPlaylistLink == playlistLink)) {
 
-        console.log("Running getInfo...")
-        playlistJSON = await getInfo();
-       }
 
+        // Get song information, multiples of 100
+        while (!(nextPage == null)) {
+            console.log("Updating dictionary...")
+            await updateDict();
+
+            console.log("Running getInfo...")
+            playlistJSON = await getInfo();
+
+        }
+
+        // Find remainder of songs that weren't found in multiples of 100,
+        // only if playlist actually does have more than 100 songs
+        // (I couldn't find a better way to find the end part of the 100 batches,
+        // and doing this satisfies both >100 songs and <100 songs)
+        let sum = 0
+        for (var key in artistDict) {
+            sum += artistDict[key][1]
+        }
+        console.log(sum)
+
+        if (sum >= 100) {
+
+            // Kind of a lazy way to change the request
+            nextPage = `https://api.spotify.com/v1/playlists/1ob2hqvSK4PYHv48W7lKJo/tracks?offset=${sum}&limit=100&market=CA&locale=en-US,en`
+            console.log("Running getInfo...")
+            playlistJSON = await getInfo();
+
+            console.log("Updating dictionary...")
+            await updateDict();
+        }
+
+
+        await updateGenreDict();
 
         updateRight();
-        await outputSong()
+
+        nextPage = null;
     }
+
+    await outputSong()
 
 }
 
@@ -91,7 +121,7 @@ function updateLink() {
 
 // Get JSON containing playlist songs, determine visiblity of other elements
 async function getInfo() {
-    
+
     let playlistId = playlistLink.match(/(?<=\/playlist\/).*(?=\?)|(?<=\/playlist\/).*/)
 
     // Code to run if regex fails (not a playlist link)
@@ -106,13 +136,16 @@ async function getInfo() {
         searchDiv.innerHTML = ""
         return;
     }
-    
-    
-    // If this link is the same as the last, return as the playlist info is the same
-    if (prevPlaylistLink == playlistLink && !(nextPage))
-        return playlistJSON;
 
-    
+
+    // If this link is the same as the last, return as the playlist info is the same
+    if (prevPlaylistLink == playlistLink && loopComplete) {
+        genreDict = {};
+        artistDict = {};
+        return playlistJSON;
+    }
+
+    loopComplete = false;
     let result;
 
     // Load next page redirect if given, otherwise load from playlist input
@@ -123,8 +156,9 @@ async function getInfo() {
 
     } else {
         result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=CA`, {
-                method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
+            method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
         });
+      
     }
 
     let resultJSON = await result.json();
@@ -142,6 +176,10 @@ async function getInfo() {
         return;
     }
 
+    // Get playlist name
+
+    if (!(nextPage))
+        playlistName = resultJSON.name;
     // Make right elements visible if playlist is loaded successfully, and wasn't loaded before
     if (!(elementsVisible)) {
         document.getElementById("rightSide").style.display = "inline";
@@ -154,46 +192,58 @@ async function getInfo() {
     console.log("Playlist retrieved")
 
 
-    
 
-    if (nextPage)
-        nextPage = resultJSON.next
-    else   
+
+    if (resultJSON.tracks)
         nextPage = resultJSON.tracks.next
+    else
+        nextPage = resultJSON.next
 
-    console.log(resultJSON)
     console.log(`Next page: ${nextPage}`)
-    
+
     return resultJSON;
-    
+
 }
 
 
 // Ran on "Timeframe" dropdown change
 async function updateDict() {
 
+
+    // Regular: JSON.tracks.items
+    // Next: JSON.items
+
     // If the link is the same AND it's the first search, don't update dict
     // On the first search, prev and playlist are the same because there wasn't anything before.
-    if ((prevPlaylistLink == playlistLink) && !(firstRun)) {
+    if ((prevPlaylistLink == playlistLink) && !(firstRun) && !(nextPage)) {
         return;
     }
 
     firstRun = false;
 
-    // Reset genre dictionary and top artist/genre text
-    genreDict = {};
     artistDiv.innerHTML = "";
     artistGenreDiv.innerHTML = "";
+    let json;
 
 
-    // Show your top 50 artists with their genres
-    let listString = "";
-    artistDict = {};
+
+    // Check if this is a playlist returned by the "next" param
+    if (playlistJSON.tracks)
+        json = playlistJSON.tracks.items
+    else
+        json = playlistJSON.items
+
+   
+
 
     // Get unique artists in playlist
     // artistDict stores artist name as key, with artist id and # of occurences as a list value
-    for (let i = 0; i < playlistJSON.tracks.items.length; i++) {
-        let artist = playlistJSON.tracks.items[i].track.artists[0];
+    for (let i = 0; i < json.length; i++) {
+        let artist = json[i].track.artists[0];
+
+        // Ignore local songs
+        if (artist.id == null)
+            continue;
 
         if (!(artist.name in artistDict))
             artistDict[artist.name] = [artist.id, 1];
@@ -201,16 +251,26 @@ async function updateDict() {
             artistDict[artist.name][1]++;
     }
 
-    
+    console.log(json)
+    console.log(artistDict)
 
+}
 
+async function updateGenreDict() {
     // Loop through each unique artist, add to genreDict
     for (var key in artistDict) {
-       let result = await fetch(`https://api.spotify.com/v1/artists/${artistDict[key][0]}`, {
+        let result = await fetch(`https://api.spotify.com/v1/artists/${artistDict[key][0]}`, {
             method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
         });
 
         let resultJSON = await result.json()
+
+        if (resultJSON.error) {
+            console.log("Artist skipped")
+            continue;
+        }
+        console.log(resultJSON)
+        console.log(artistDict[key][0])
 
         let genres = resultJSON.genres;
         let artist = resultJSON.name;
@@ -234,19 +294,16 @@ async function updateDict() {
         }
 
     }
-    console.log(artistDict)
+    // console.log(artistDict)
+    //console.log("genreDict formed")
+    //console.log(artistDict)
+    //console.log(Object.keys(artistDict).length)
 
-    console.log("genreDict formed")
-    console.log(artistDict)
-    console.log(Object.keys(artistDict).length)
+    //console.log(genreDict)
 
-    console.log(genreDict)
-    
     // Update previous link to be this one
     prevPlaylistLink = playlistLink;
-
 }
-
 
 // Ran on "Show/Hide top artists" press
 function toggleRight() {
@@ -266,24 +323,25 @@ function updateRight() {
     artistGenreDiv.innerHTML = ""
 
     // Output artists by # of occurences
-    document.getElementById('artistTitle').innerHTML = `Artists by occurrences in <i>${playlistJSON.name}</i>:`
+    console.log(playlistJSON)
+    document.getElementById('artistTitle').innerHTML = `Artists by occurrences in <i>${playlistName}</i>:`
     let listString = "";
 
     // Sort artists by # of occurences
 
-    
+
 
     var items = Object.keys(artistDict).map(
         (key) => { return [key, artistDict[key][1]] });
 
     items.sort(
-            (first, second) => { return second[1] - first[1]  }
-          );
+        (first, second) => { return second[1] - first[1] }
+    );
 
     var keys = items.map(
-            (e) => { return e[0] });
-    
-    
+        (e) => { return e[0] });
+
+
 
     for (var i = 0; i < keys.length; i++) {
         let artist = keys[i]
@@ -357,7 +415,7 @@ async function fetchSong(token, request) {
 // From Spotify Web API Template:
 // Verifies POST request, returns access token
 export async function getAccessToken() {
-    
+
 
     const params = new URLSearchParams();
     params.append("grant_type", "client_credentials");
