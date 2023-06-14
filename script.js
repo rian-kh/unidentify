@@ -7,13 +7,18 @@ const artistDiv = document.getElementById('artists');
 const artistGenreDiv = document.getElementById('artistsByGenre');
 const searchDiv = document.getElementById('search');
 const userId = "userId"
-let playlistLink;
+
+// Variables for song searching, determining visibility
+let playlistJSON;
+let playlistLink = "";
+let prevPlaylistLink;
+let elementsVisible = false;
+
 
 // Button function redirects
-document.getElementById("searchButton").onclick = test;
+document.getElementById("searchButton").onclick = searchSong;
 document.getElementById('playlist').onchange = updateLink;
-//document.getElementById("hideButton").onclick = toggleRight;
-//document.getElementById("timeframe").onchange = updateRight;
+document.getElementById("hideButton").onclick = toggleRight;
 
 
 // Definition of global variables
@@ -23,45 +28,9 @@ var genreDict = {};
 
 
 
-function updateLink() {
-    playlistLink = document.getElementById('playlist').value;
-}
-
-async function test() {
-
-    let playlistId = playlistLink.match(/(?<=\/playlist\/).*(?=[\?])|(?<=\/playlist\/).*/)
-
-    if (playlistId == null) {
-        console.log("Invalid link")
-        return;
-    }
-    
-    const result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=CA`, {
-        method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
-    });
-
-    let value = await result.json();
-
-    if (value.error) {
-        console.log("Invalid playlist")
-        return;
-    }
-
-    console.log(value)
-}
 
 
 // Code ran on page load
-
-// Store access token in cookies to reduce API requests
-if (document.cookie.split('accessToken=').length == 2) {
-    accessToken = document.cookie.split('accessToken=')[1]
-} else {
-    accessToken = await getAccessToken();
-    document.cookie = `accessToken=${accessToken}; max-age=3600;`
-}
-
-
 
 // Redirects to original site if reloaded, adapted from https://stackoverflow.com/a/53307588/21809626
 const pageAccessedByReload = (
@@ -76,19 +45,12 @@ if (pageAccessedByReload)
     document.location = "http://localhost:5173/"
 
 
-
-
-
-// Code to run after playlist is given (Artist finding, etc)
-if (genreDict) {
-
-    // Make profile/search visible
-    document.getElementById('search').style.display = "inline";
-    document.getElementById('artists').style.display = "inline";
-    document.getElementById('artistsByGenre').style.display = "inline";
-
-    // Initial artist/genre output, with long_term as default timeframe
-    //updateRight();
+// Store access token in cookies to reduce API requests, if found
+if (document.cookie.split('accessToken=').length == 2) {
+    accessToken = document.cookie.split('accessToken=')[1]
+} else {
+    accessToken = await getAccessToken();
+    document.cookie = `accessToken=${accessToken}; max-age=3600;`
 }
 
 
@@ -97,40 +59,94 @@ if (genreDict) {
 
 
 
+// Main code ran for every search
+async function searchSong() {
+
+    playlistJSON = await getInfo();
+
+    console.log(playlistJSON)
+}
 
 
 
+// Update link on every change
+function updateLink() {
+    playlistLink = document.getElementById('playlist').value;
+}
 
+
+// Get JSON containing playlist songs, determine visiblity of other elements
+async function getInfo() {
+    
+
+    let playlistId = playlistLink.match(/(?<=\/playlist\/).*(?=[\?])|(?<=\/playlist\/).*/)
+
+    // Code to run if regex fails (not a playlist link)
+    if (playlistId == null) {
+        console.log("Invalid link")
+        document.getElementById("rightSide").style.display = "none";
+        document.getElementById("search").style.display = "none";
+        document.getElementById("hideButton").style.display = "none";
+        elementsVisible = false;
+        prevPlaylistLink = null;
+        return;
+    }
+    
+    
+    // If this link is the same as the last, return as the playlist info is the same
+    if (prevPlaylistLink == playlistLink)
+        return playlistJSON;
+
+    const result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=CA&fields=name%2Cowner.display_name%2Ctracks.items.track`, {
+            method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
+     });
+    
+
+    // Set this link to now be the previous link
+    prevPlaylistLink = playlistLink;
+
+
+    let resultJSON = await result.json();
+
+    // Code to run if playlist is not found
+    if (resultJSON.error) {
+        console.log("Invalid playlist")
+        document.getElementById("rightSide").style.display = "none";
+        document.getElementById("search").style.display = "none";
+        document.getElementById("hideButton").style.display = "none";
+        elementsVisible = false;
+        prevPlaylistLink = null;
+        return;
+    }
+
+    // Make right elements visible if playlist is loaded successfully, and wasn't loaded before
+    if (!(elementsVisible)) {
+        document.getElementById("rightSide").style.display = "inline";
+        document.getElementById("search").style.display = "inline";
+        document.getElementById("hideButton").style.display = "inline";
+        console.log("Elements loaded")
+        elementsVisible = true;
+    }
+
+    console.log("Playlist retrieved")
+    return resultJSON;
+    
+}
 
 
 // Ran on "Timeframe" dropdown change
-async function updateRight() {
-
-    
+async function updateRight(json) {
 
     // Reset genre dictionary and top artist/genre text
     genreDict = {};
     artistDiv.innerHTML = "";
-    artistGenreDiv.innerHTML = ""
+    artistGenreDiv.innerHTML = "";
 
     // Hide top artists until updated (this doesnt work????)
     document.getElementById("rightSide").style.display = "none";
 
-    // Update header for top artists
-    if (timeframe == "long_term")
-        document.getElementById("topArtist").innerHTML = "Top 50 Artists (All-time)";
-    else if (timeframe == "medium_term")
-        document.getElementById("topArtist").innerHTML = "Top 50 Artists (Last 6 months)";
-    else if (timeframe == "short_term")
-        document.getElementById("topArtist").innerHTML = "Top 50 Artists (Last 1 month)";
-
-    // Show top artists if the option was already pressed
-    if (document.getElementById("hideButton").value == "Hide top artists")
-        document.getElementById("rightSide").style.display = "inline";
-
 
     // Show your top 50 artists with their genres
-    let topInfo = await fetchTop(accessToken);
     let listString = "";
 
     for (let i = 0; i < topInfo.items.length; i++) {
@@ -180,19 +196,18 @@ async function updateRight() {
 
 // Ran on "Show/Hide top artists" press
 function toggleRight() {
-
     if (document.getElementById("hideButton").value == "Show top artists") {
-        document.getElementById("rightSide").style.display = "inline";
+        document.getElementById("rightSide").style.display = "none";
         document.getElementById("hideButton").value = "Hide top artists";
     } else {
-        document.getElementById("rightSide").style.display = "none";
+        document.getElementById("rightSide").style.display = "inline";
         document.getElementById("hideButton").value = "Show top artists";
     }
 }
 
 
 // Outputs 5 songs matching the genre specified
-async function outputSongs() {
+async function outputSongs(json) {
 
     // Random genre from dictionary, adapted from https://stackoverflow.com/questions/61042479/how-to-get-a-random-key-value-from-a-javascript-object
     // Separating keys from genreInput is just for readability

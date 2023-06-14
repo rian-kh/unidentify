@@ -1,5 +1,4 @@
 
-
 /* Background colour */
 body {
     background-color: #9fdcb5;
@@ -9,7 +8,7 @@ body {
 
 /* Sides of website */
 
-/* leftSide: Username, buttons, recommendation results */
+/* leftSide: Search button, recommendation results */
 /* rightSide: Top artists/genres */
 #leftSide { 
     float: left;
@@ -22,20 +21,16 @@ body {
 
 
 
-/* Elements hidden by default (revealed after authentication): */
+/* Elements hidden by default (revealed after valid playlist is given): */
 
-/* profile: Username */
-/* logOutButton: Button to log out */
-/* searchBox: Buttons for recommending a song/showing top artists */
-#profile {
+/* search: Search result for obscure song */
+/* hideButton: Button to toggle right side visibility */
+
+#search {
     display: none;
 }
 
-#logOutButton {
-    display: none;
-}
-
-#searchBox {
+#hideButton {
     display: none;
 }
 
@@ -43,14 +38,4 @@ body {
 
 
 
-/* Elements hidden by default (revealed after "Show top artists" button press) */
 
-/* artists: Top 50 artists of given timeframe w/ genres  */
-/* artistsByGenre: Top 50 artists of given timeframe, but sorted by genre first */
-#artists {
-    display: none;
-}
-
-#artistsByGenre {
-    display: none;
-}
