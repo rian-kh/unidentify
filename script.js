@@ -64,7 +64,7 @@ if (code) {
     profile = await fetchProfile(accessToken);
 
     // Create cookie containing the access token for future uses
-    document.cookie = `accessToken=${accessToken}; max-age=34560000;`;
+    document.cookie = `accessToken=${accessToken}; max-age=3600;`;
 
     // Make profile/search visible
     populateUI(profile);
