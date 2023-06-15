@@ -24,7 +24,7 @@ let playlistName;
 let nextPage = null;
 let prevPlaylistLink;
 let firstRun = true;
-let elementsVisible = false;
+let runLoop = false;
 let loopComplete = false;
 var genreDict = {};
 var artistDict = {};
@@ -62,52 +62,70 @@ if (document.cookie.split('accessToken=').length == 2 && !(document.cookie.split
 // Main code ran for every search
 async function searchSong() {
 
-    playlistJSON = await getInfo();
+    // Only run playlist data retrieval if the link is different
+    if (!(prevPlaylistLink == playlistLink)) {
+        playlistJSON = await getInfo();
 
-    // Only run if playlist was successfully found
-    if (elementsVisible && !(prevPlaylistLink == playlistLink)) {
+        console.log(playlistJSON)
 
+        // Reset dictionaries
+        genreDict = {};
+        artistDict = {};
 
-        // Get song information, multiples of 100
-        while (!(nextPage == null)) {
-            console.log("Updating dictionary...")
-            await updateDict();
-
-            console.log("Running getInfo...")
-            playlistJSON = await getInfo();
-
+        // Ignore loop if the playlist has 100 or less songs
+        if ((playlistJSON) && !(playlistJSON.tracks.next)) {
+            await updateDict()
+            await updateGenreDict();
+            updateRight();
+            runLoop = false;
         }
 
-        // Find remainder of songs that weren't found in multiples of 100,
-        // only if playlist actually does have more than 100 songs
-        // (I couldn't find a better way to find the end part of the 100 batches,
-        // and doing this satisfies both >100 songs and <100 songs)
-        let sum = 0
-        for (var key in artistDict) {
-            sum += artistDict[key][1]
+        // Only run if playlist was successfully found
+        if (runLoop) {
+
+
+            // Get song information, multiples of 100
+            while (!(nextPage == null)) {
+                console.log("Updating dictionary...")
+                await updateDict();
+
+                console.log("Running getInfo...")
+                playlistJSON = await getInfo();
+
+            }
+
+            // Find remainder of songs that weren't found in multiples of 100,
+            // only if playlist actually does have more than 100 songs
+            // (I couldn't find a better way to find the end part of the 100 batches,
+            // and doing this satisfies both >100 songs and <100 songs)
+            let sum = 0
+            for (var key in artistDict) {
+                sum += artistDict[key][1]
+            }
+            console.log(sum)
+
+            if (sum >= 100) {
+
+                // Kind of a lazy way to change the request
+                nextPage = `https://api.spotify.com/v1/playlists/1ob2hqvSK4PYHv48W7lKJo/tracks?offset=${sum}&limit=100&market=CA&locale=en-US,en`
+                console.log("Running getInfo...")
+                playlistJSON = await getInfo();
+
+                console.log("Updating dictionary...")
+                await updateDict();
+            }
+
+
+            await updateGenreDict();
+
+            updateRight();
+
+            nextPage = null;
         }
-        console.log(sum)
-
-        if (sum >= 100) {
-
-            // Kind of a lazy way to change the request
-            nextPage = `https://api.spotify.com/v1/playlists/1ob2hqvSK4PYHv48W7lKJo/tracks?offset=${sum}&limit=100&market=CA&locale=en-US,en`
-            console.log("Running getInfo...")
-            playlistJSON = await getInfo();
-
-            console.log("Updating dictionary...")
-            await updateDict();
-        }
-
-
-        await updateGenreDict();
-
-        updateRight();
-
-        nextPage = null;
     }
 
-    await outputSong()
+    if (!(Object.keys(genreDict).length == 0))
+        await outputSong()
 
 }
 
@@ -130,21 +148,28 @@ async function getInfo() {
         document.getElementById("rightSide").style.display = "none";
         document.getElementById("search").style.display = "none";
         document.getElementById("hideButton").style.display = "none";
-        elementsVisible = false;
+        runLoop = false;
         prevPlaylistLink = null;
         nextPage = null;
+        artistDiv.innerHTML = ""
+        artistGenreDiv.innerHTML = ""
         searchDiv.innerHTML = ""
+        artistDict = {};
+        genreDict = {};
         return;
     }
 
 
     // If this link is the same as the last, return as the playlist info is the same
     if (prevPlaylistLink == playlistLink && loopComplete) {
-        genreDict = {};
-        artistDict = {};
         return playlistJSON;
     }
 
+    // Hide elements while loading
+    document.getElementById("rightSide").style.display = "none";
+    document.getElementById("search").style.display = "none";
+    document.getElementById("hideButton").style.display = "none";
+    
     loopComplete = false;
     let result;
 
@@ -158,7 +183,7 @@ async function getInfo() {
         result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=CA`, {
             method: "GET", headers: { Authorization: `Bearer ${accessToken}` }
         });
-      
+
     }
 
     let resultJSON = await result.json();
@@ -169,25 +194,24 @@ async function getInfo() {
         document.getElementById("rightSide").style.display = "none";
         document.getElementById("search").style.display = "none";
         document.getElementById("hideButton").style.display = "none";
-        elementsVisible = false;
+        runLoop = false;
         prevPlaylistLink = null;
+        artistDiv.innerHTML = ""
+        artistGenreDiv.innerHTML = ""
         searchDiv.innerHTML = ""
         nextPage = null;
+        artistDict = {};
+        genreDict = {};
         return;
     }
 
+    runLoop = true;
     // Get playlist name
 
     if (!(nextPage))
         playlistName = resultJSON.name;
+
     // Make right elements visible if playlist is loaded successfully, and wasn't loaded before
-    if (!(elementsVisible)) {
-        document.getElementById("rightSide").style.display = "inline";
-        document.getElementById("search").style.display = "inline";
-        document.getElementById("hideButton").style.display = "inline";
-        console.log("Elements loaded")
-        elementsVisible = true;
-    }
 
     console.log("Playlist retrieved")
 
@@ -233,7 +257,7 @@ async function updateDict() {
     else
         json = playlistJSON.items
 
-   
+
 
 
     // Get unique artists in playlist
@@ -373,6 +397,11 @@ function updateRight() {
         artistGenreDiv.innerHTML += "</ul>\n<p>&nbsp;</p>";
     }
 
+    // Display right side
+    runLoop = false;
+    document.getElementById("rightSide").style.display = "inline";
+    document.getElementById("search").style.display = "inline";
+    document.getElementById("hideButton").style.display = "inline";
 }
 
 // Outputs 5 songs matching the genre specified
