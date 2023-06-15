@@ -1,49 +1,47 @@
-<!-- Some code adapted from https://developer.spotify.com/documentation/web-api/howtos/web-app-profile -->
-
 <html>
-    <head>
-        <title>Unidentify</title>
-        <script src="script.js" type="module"></script>
-        <link rel="stylesheet" href="styles.css">
-    </head>
 
-    <body>
-        <div id="leftSide" style="float: left">
-            <h1>Unidentify</h1>
-            <p>Uses a playlist link to <i>(try to)</i> find obscure songs matching the genres of artists in that playlist.</p>
-            <p>Playlist must be <b>public</b>.</p>
-            <p>&nbsp;</p>
-            <label for="playlist">Playlist link: </label>
-            <input type="text" id="playlist">
-            <button id="searchButton">Find a song...</button>
-            <input type="button" value="Show top artists" id="hideButton"></input>
-            <p>&nbsp;</p>
+<head>
+    <title>Unidentify</title>
+    <script src="script.js" type="module"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
 
-            <div id="search">
-                
-                hello
+<body>
+    <div id="leftSide">
+        <h1>Unidentify</h1>
+        <p>Uses a playlist link to <i>(try to)</i> find obscure songs matching the genres of artists in that playlist.
+        </p>
+        <p>Playlist must be <b>public</b>.</p>
+        <a href="https://github.com/rian-kh/unidentify" target="_blank" id="githubLink">More about this site...</a>
+        <p>&nbsp;</p>
+        <label for="playlist">Playlist link: </label>
+        <input type="text" id="playlist">
+        <button id="searchButton">Find a song...</button>
+        <label for="searchButton" id="statusText"></label>
+        <input type="button" value="Show top artists" id="hideButton"></input>
+        <p>&nbsp;</p>
 
-                
-
-            </div>
+        <div id="search">
 
         </div>
 
+    </div>
 
-        <div id="rightSide">
 
-            <h1 id="artistTitle"></h1>
-            <div id="artists">
+    <div id="rightSide">
 
-            </div>
-
-            <h1 id="genreTitle"></h1>
-            <div id="artistsByGenre">
-
-            </div>
+        <h1 id="artistTitle"></h1>
+        <div id="artists">
 
         </div>
 
-    </body>
+        <h1 id="genreTitle"></h1>
+        <div id="artistsByGenre">
+
+        </div>
+
+    </div>
+
+</body>
 
 </html>

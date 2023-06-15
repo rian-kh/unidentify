@@ -1,5 +1,5 @@
-
 /* Background colour */
+
 body {
     background-color: #9fdcb5;
 }
@@ -10,7 +10,8 @@ body {
 
 /* leftSide: Search button, recommendation results */
 /* rightSide: Top artists/genres */
-#leftSide { 
+
+#leftSide {
     float: left;
 }
 
@@ -21,10 +22,15 @@ body {
 
 
 
-/* Elements hidden by default (revealed after valid playlist is given): */
+/* Elements hidden by default (revealed after playlist is given): */
 
+/* statusText: Text showing the status of the search */
 /* search: Search result for obscure song */
 /* hideButton: Button to toggle right side visibility */
+
+#statusText {
+    display: none;
+}
 
 #search {
     display: none;
@@ -36,6 +42,15 @@ body {
 
 
 
+/* Other elements */
 
+/* githubLink: Link to the github repository*/
+/* playlist: Textbox for playlist link */
 
+#githubLink {
+    font-size: small;
+}
 
+#playlist {
+    width: 300px;
+}
