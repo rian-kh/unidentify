@@ -87,10 +87,9 @@ async function searchSong() {
             updateRight();
         }
 
-
+        
         // Offset loop: Get song information, batches of 100 due to Spotify API limits
         while (!(nextPage == null)) {
-
             await updateArtistDict();
             playlistJSON = await getInfo();
         }
@@ -342,7 +341,11 @@ function updateRight() {
         if (genres.length == 0)
             genres = "N/A"
 
-        listString += `<li><b>${artist}</b>, Occurrences: ${occurences}, Genres: ${genres.slice(0, 5)}</li>\n`
+        // Limit genres to 3 to avoid div being misaligned
+        if (genres.length > 3)
+            listString += `<li><b>${artist}</b>, Occurrences: ${occurences}, Genres: ${genres.slice(0, 3)},more...</li>\n`
+        else
+            listString += `<li><b>${artist}</b>, Occurrences: ${occurences}, Genres: ${genres.slice(0, 3)}</li>\n`
     }
 
     artistDiv.innerHTML += "<ol type=\"1\">\n" + listString + "</ol>\n"
